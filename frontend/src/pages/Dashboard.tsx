@@ -1,12 +1,11 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { motion, AnimatePresence } from 'motion/react';
-import { 
-  Activity, 
-  Server, 
-  FolderOpen, 
-  Image as ImageIcon, 
+import {
+  Activity,
+  Server,
+  FolderOpen,
+  Image as ImageIcon,
   BookOpen,
   Play,
   CheckCircle2,
@@ -15,24 +14,67 @@ import {
   Layers,
   ArrowUpRight
 } from 'lucide-react';
-import { healthApi } from '../lib/api';
-import { apiRequest } from '../lib/api';
+import { healthApi, sessionsApi, apiRequest } from '../lib/api';
 
 export default function Dashboard() {
   const navigate = useNavigate();
   const [health, setHealth] = useState<'healthy' | 'offline' | 'checking'>('checking');
-  const [datasetName, setDatasetName] = useState('event_dataset_1_conference');
+  const [datasetName, setDatasetName] = useState('');
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<any>(null);
   const [error, setError] = useState<string | null>(null);
 
+  const [statsData, setStatsData] = useState({
+    activeSessions: '0',
+    assetsProcessed: '0',
+    apiVersion: 'v0.0.0',
+    systemStatus: 'CHECKING'
+  });
+
   useEffect(() => {
     healthApi.check()
-      .then(() => setHealth('healthy'))
-      .catch(() => setHealth('offline'));
+      .then(() => {
+        setHealth('healthy');
+        setStatsData(prev => ({ ...prev, systemStatus: 'HEALTHY' }));
+      })
+      .catch(() => {
+        setHealth('offline');
+        setStatsData(prev => ({ ...prev, systemStatus: 'OFFLINE' }));
+      });
+
+    sessionsApi.getAll()
+      .then(data => {
+        const sessions = Array.isArray(data) ? data : (data.sessions || []);
+        const totalAssets = sessions.reduce((sum: number, s: any) => sum + (s.total_assets || 0), 0);
+        const activeCount = sessions.filter((s: any) => s.status === 'processing').length;
+
+        setStatsData(prev => ({
+          ...prev,
+          activeSessions: sessions.length.toString(),
+          assetsProcessed: totalAssets.toLocaleString()
+        }));
+      })
+      .catch(err => console.error('Failed to fetch sessions stats:', err));
+
+    // 3. Fetch API Version
+    apiRequest('/')
+      .then(data => {
+        if (data && data.version) {
+          setStatsData(prev => ({ ...prev, apiVersion: `v${data.version}` }));
+        } else {
+          setStatsData(prev => ({ ...prev, apiVersion: 'v1.0.0' }));
+        }
+      })
+      .catch(() => {
+        setStatsData(prev => ({ ...prev, apiVersion: 'v1.0.0' }));
+      });
   }, []);
 
   const handleProcess = async () => {
+    if (!datasetName) {
+      setError('Please enter a dataset name');
+      return;
+    }
     setLoading(true);
     setError(null);
     setResult(null);
@@ -52,32 +94,32 @@ export default function Dashboard() {
   const stats = [
     {
       title: 'System Health',
-      value: health.toUpperCase(),
-      subValue: 'All systems operational',
+      value: statsData.systemStatus,
+      subValue: health === 'healthy' ? 'All systems operational' : 'System connection lost',
       icon: Activity,
-      color: 'text-emerald-400',
-      bg: 'bg-emerald-500/10'
+      color: health === 'healthy' ? 'text-emerald-400' : 'text-red-400',
+      bg: health === 'healthy' ? 'bg-emerald-500/10' : 'bg-red-500/10'
     },
     {
-      title: 'Active Sessions',
-      value: '12',
-      subValue: '+3 since last hour',
+      title: 'Total Sessions',
+      value: statsData.activeSessions,
+      subValue: 'Across all datasets',
       icon: Clock,
       color: 'text-blue-400',
       bg: 'bg-blue-500/10'
     },
     {
       title: 'Assets Processed',
-      value: '1,284',
-      subValue: '98% success rate',
+      value: statsData.assetsProcessed,
+      subValue: 'High-fidelity outputs',
       icon: Layers,
       color: 'text-purple-400',
       bg: 'bg-purple-500/10'
     },
     {
       title: 'API Version',
-      value: 'v1.0.0',
-      subValue: 'Latest release',
+      value: statsData.apiVersion,
+      subValue: 'Production build',
       icon: Server,
       color: 'text-orange-400',
       bg: 'bg-orange-500/10'
@@ -86,22 +128,22 @@ export default function Dashboard() {
 
   return (
     <div className="max-w-6xl mx-auto space-y-10 py-4">
-      {/* Hero Header */}
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
         <div>
           <h1 className="text-5xl font-light tracking-tight text-white mb-2">Mission Control</h1>
           <p className="text-shade-50 text-lg">Real-time system overview and dataset orchestration</p>
         </div>
-        <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-dark-forest border border-white/5">
+        <div className={`flex items-center gap-2 px-3 py-1.5 rounded-full border border-white/5 ${health === 'healthy' ? 'bg-dark-forest' : 'bg-red-500/10'}`}>
           <span className="relative flex h-2 w-2">
-            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-            <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+            <span className={`animate-ping absolute inline-flex h-full w-full rounded-full opacity-75 ${health === 'healthy' ? 'bg-emerald-400' : 'bg-red-400'}`}></span>
+            <span className={`relative inline-flex rounded-full h-2 w-2 ${health === 'healthy' ? 'bg-emerald-500' : 'bg-red-500'}`}></span>
           </span>
-          <span className="text-[11px] font-bold uppercase tracking-wider text-emerald-500">System healthy</span>
+          <span className={`text-[11px] font-bold uppercase tracking-wider ${health === 'healthy' ? 'text-emerald-500' : 'text-red-500'}`}>
+            System {health}
+          </span>
         </div>
       </div>
 
-      {/* Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         {stats.map((stat, i) => (
           <motion.div
@@ -126,7 +168,6 @@ export default function Dashboard() {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Dataset Orchestrator */}
         <div className="lg:col-span-2 shopify-card overflow-hidden">
           <div className="p-8 border-b border-white/5 flex items-center gap-3">
             <div className="p-2 rounded-lg bg-blue-600/10 text-blue-500">
@@ -137,7 +178,7 @@ export default function Dashboard() {
               <p className="text-xs text-shade-50">Deploy the content engine on a new media collection</p>
             </div>
           </div>
-          
+
           <div className="p-8">
             <div className="bg-void/50 border border-white/5 rounded-xl p-8 space-y-6">
               <div className="space-y-3">
@@ -146,11 +187,11 @@ export default function Dashboard() {
                   <input
                     value={datasetName}
                     onChange={e => setDatasetName(e.target.value)}
-                    placeholder="e.g. event_dataset_1_conference"
+                    placeholder="e.g. event_dataset_1"
                     className="flex-1 h-12 bg-dark-forest border border-white/5 rounded-lg px-6 text-sm text-white focus:ring-1 focus:ring-blue-500 outline-none transition-all placeholder:text-shade-70"
                   />
-                  <button 
-                    onClick={handleProcess} 
+                  <button
+                    onClick={handleProcess}
                     disabled={loading}
                     className="btn-pill h-12 bg-blue-600 hover:bg-blue-500 text-white flex items-center justify-center gap-3 shadow-lg shadow-blue-900/40 disabled:opacity-50 disabled:cursor-not-allowed group min-w-[180px]"
                   >
