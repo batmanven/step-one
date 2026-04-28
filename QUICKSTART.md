@@ -3,22 +3,26 @@
 ## Backend Setup
 
 1. Navigate to backend directory:
+
 ```bash
 cd backend
 ```
 
 2. Create virtual environment:
+
 ```bash
 python -m venv venv
 source venv/bin/activate  # On Windows: venv\Scripts\activate
 ```
 
 3. Install dependencies:
+
 ```bash
 pip install -r requirements.txt
 ```
 
 4. Create `.env` file:
+
 ```env
 MONGODB_URI=mongodb://localhost:27017/stepone
 REDIS_URL=redis://localhost:6379/0
@@ -34,6 +38,7 @@ CONFIDENCE_THRESHOLD=0.7
 ```
 
 5. Start MongoDB (local):
+
 ```bash
 # Using Docker
 docker run -d -p 27017:27017 --name mongodb mongo:7.0
@@ -42,12 +47,14 @@ docker run -d -p 27017:27017 --name mongodb mongo:7.0
 ```
 
 6. Start Redis (local):
+
 ```bash
 # Using Docker
 docker run -d -p 6379:6379 --name redis redis:7-alpine
 ```
 
 7. Start backend server:
+
 ```bash
 uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
 ```
@@ -58,16 +65,19 @@ API docs at: **http://localhost:8000/docs**
 ## Frontend Setup
 
 1. Navigate to frontend directory:
+
 ```bash
 cd frontend
 ```
 
 2. Install dependencies:
+
 ```bash
 npm install
 ```
 
 3. Start development server:
+
 ```bash
 npm run dev
 ```
@@ -96,11 +106,13 @@ This downloads free-to-use images from Unsplash and videos from Pexels to a `dem
 1. Create `.env` file in project root with all environment variables
 
 2. Start all services:
+
 ```bash
 docker-compose up -d
 ```
 
 3. Services:
+
 - Backend: http://localhost:8000
 - Frontend: http://localhost:3000
 - MongoDB: localhost:27017
@@ -118,19 +130,23 @@ docker-compose up -d
 ## Troubleshooting
 
 **CORS errors:**
+
 - Make sure backend is running on port 8000
 - Check CORS settings in `backend/app/main.py`
 
 **MongoDB connection errors:**
+
 - Ensure MongoDB is running on port 27017
 - Check MONGODB_URI in `.env`
 
 **Frontend not loading sessions:**
+
 - Check browser console for errors
 - Verify API URL in `frontend/.env`
 - Ensure backend is accessible
 
 **Upload errors:**
+
 - Ensure you're uploading 50-150 files (requirement)
 - Check file types (JPEG, PNG, WebP, HEIC, MP4, MOV, AVI, MKV)
 - Verify S3 credentials in `.env`
