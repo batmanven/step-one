@@ -1,7 +1,4 @@
 import { useEffect, useState } from 'react';
-import { Card, CardContent } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Progress } from '@/components/ui/progress';
 import { motion } from 'motion/react';
 import { 
   Clock, 
@@ -12,10 +9,10 @@ import {
   Download,
   Calendar,
   Layers,
-  ChevronRight
+  ChevronRight,
+  RefreshCw
 } from 'lucide-react';
 import { sessionsApi } from '../lib/api';
-import { Button } from '@/components/ui/button';
 
 interface Session {
   session_id: string;
@@ -30,7 +27,8 @@ export default function Sessions() {
   const [sessions, setSessions] = useState<Session[]>([]);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
+  const fetchSessions = () => {
+    setLoading(true);
     sessionsApi.getAll()
       .then(data => {
         const sessionsData = Array.isArray(data) ? data : (data.sessions || []);
@@ -48,123 +46,135 @@ export default function Sessions() {
         setSessions([]);
       })
       .finally(() => setLoading(false));
+  };
+
+  useEffect(() => {
+    fetchSessions();
   }, []);
 
   const getStatusConfig = (status: Session['status']) => {
     switch (status) {
       case 'processing':
-        return { icon: Loader2, color: 'text-blue-400', bg: 'bg-blue-500/10', label: 'Processing' };
+        return { icon: Loader2, color: 'text-blue-500', bg: 'bg-blue-500/10', label: 'Processing' };
       case 'completed':
-        return { icon: CheckCircle2, color: 'text-emerald-400', bg: 'bg-emerald-500/10', label: 'Success' };
+        return { icon: CheckCircle2, color: 'text-emerald-500', bg: 'bg-emerald-500/10', label: 'Success' };
       case 'failed':
-        return { icon: XCircle, color: 'text-red-400', bg: 'bg-red-500/10', label: 'Failed' };
+        return { icon: XCircle, color: 'text-red-500', bg: 'bg-red-500/10', label: 'Failed' };
       default:
-        return { icon: Clock, color: 'text-yellow-400', bg: 'bg-yellow-500/10', label: 'Pending' };
+        return { icon: Clock, color: 'text-amber-500', bg: 'bg-amber-500/10', label: 'Pending' };
     }
   };
 
   return (
-    <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+    <div className="max-w-6xl mx-auto space-y-10 py-4">
+      {/* Header */}
+      <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
         <div>
-          <h2 className="text-4xl font-bold tracking-tight">Processing Queue</h2>
-          <p className="text-muted-foreground mt-1">
-            Historical and active content generation sessions
-          </p>
+          <h1 className="text-5xl font-light tracking-tight text-white mb-2">Processing Queue</h1>
+          <p className="text-shade-50 text-lg">Historical and active content generation sessions</p>
         </div>
-        <Button className="rounded-xl shadow-lg shadow-primary/20">
-          <Layers className="mr-2 h-4 w-4" />
+        <button 
+          onClick={fetchSessions}
+          className="btn-pill min-w-[160px] bg-dark-forest border border-white/5 text-white text-xs flex items-center justify-center gap-2 hover:bg-forest transition-colors"
+        >
+          <RefreshCw className="h-3.5 w-3.5" />
           Refresh Queue
-        </Button>
+        </button>
       </div>
 
       {loading ? (
-        <div className="flex flex-col items-center justify-center py-24 gap-4">
-          <Loader2 className="h-10 w-10 animate-spin text-primary/50" />
-          <p className="text-muted-foreground animate-pulse">Syncing with server...</p>
+        <div className="flex flex-col items-center justify-center py-32 gap-6 shopify-card">
+          <div className="relative">
+            <Loader2 className="h-12 w-12 animate-spin text-blue-500" />
+            <div className="absolute inset-0 blur-xl bg-blue-500/20 rounded-full" />
+          </div>
+          <p className="text-shade-50 font-medium animate-pulse">Syncing with cluster...</p>
         </div>
       ) : (
         <div className="space-y-4">
-          {sessions.map((session, i) => {
-            const config = getStatusConfig(session.status);
-            const StatusIcon = config.icon;
-            
-            return (
-              <motion.div
-                key={session.session_id}
-                initial={{ opacity: 0, x: -20 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: i * 0.05 }}
-              >
-                <Card className="glass-card border-white/5 hover:border-white/20 transition-all overflow-hidden group">
-                  <CardContent className="p-0">
-                    <div className="flex flex-col md:flex-row items-stretch md:items-center p-5 gap-6">
-                      {/* Status & ID */}
-                      <div className="flex items-center gap-4 min-w-[200px]">
-                        <div className={`p-3 rounded-2xl ${config.bg} ${config.color}`}>
-                          <StatusIcon className={`h-6 w-6 ${session.status === 'processing' ? 'animate-spin' : ''}`} />
-                        </div>
-                        <div>
-                          <div className="text-sm font-mono text-muted-foreground">{session.session_id}</div>
-                          <Badge variant="outline" className={`mt-1 border-none px-0 font-semibold ${config.color}`}>
-                            {config.label}
-                          </Badge>
-                        </div>
+          {sessions.length === 0 ? (
+            <div className="shopify-card p-20 text-center space-y-4">
+              <div className="inline-flex p-4 rounded-full bg-dark-forest text-shade-70 mb-2">
+                <Layers className="h-8 w-8" />
+              </div>
+              <h3 className="text-xl font-light text-white">No sessions found</h3>
+              <p className="text-shade-50 max-w-xs mx-auto">Start a new pipeline to see your sessions appear here.</p>
+            </div>
+          ) : (
+            sessions.map((session, i) => {
+              const config = getStatusConfig(session.status);
+              const StatusIcon = config.icon;
+              
+              return (
+                <motion.div
+                  key={session.session_id}
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: i * 0.05 }}
+                  className="shopify-card group hover:border-white/10"
+                >
+                  <div className="flex flex-col md:flex-row items-center p-6 gap-8">
+                    {/* Status & ID */}
+                    <div className="flex items-center gap-5 min-w-[240px]">
+                      <div className={`p-3.5 rounded-xl ${config.bg} ${config.color} group-hover:scale-105 transition-transform`}>
+                        <StatusIcon className={`h-6 w-6 ${session.status === 'processing' ? 'animate-spin' : ''}`} />
                       </div>
-
-                      {/* Dataset Info */}
-                      <div className="flex-1 min-w-[200px]">
-                        <div className="text-sm text-muted-foreground mb-1 flex items-center gap-2">
-                          <Layers className="h-3 w-3" /> Dataset
+                      <div className="space-y-1">
+                        <div className="text-[10px] font-bold text-shade-70 uppercase tracking-widest leading-none mb-1">Session ID</div>
+                        <div className="text-sm font-mono text-white truncate max-w-[120px]">{session.session_id}</div>
+                        <div className={`text-[11px] font-bold uppercase tracking-wider ${config.color}`}>
+                          {config.label}
                         </div>
-                        <div className="font-semibold text-lg">{session.dataset}</div>
-                      </div>
-
-                      {/* Meta Info */}
-                      <div className="flex gap-8">
-                        <div className="min-w-[100px]">
-                          <div className="text-sm text-muted-foreground mb-1 flex items-center gap-2">
-                            <Calendar className="h-3 w-3" /> Date
-                          </div>
-                          <div className="font-medium">{new Date(session.created_at).toLocaleDateString()}</div>
-                        </div>
-                        <div className="min-w-[80px]">
-                          <div className="text-sm text-muted-foreground mb-1 flex items-center gap-2">
-                            <Layers className="h-3 w-3" /> Assets
-                          </div>
-                          <div className="font-medium">{session.assets_count}</div>
-                        </div>
-                      </div>
-
-                      {/* Progress (if processing) */}
-                      {session.status === 'processing' && (
-                        <div className="flex-1 min-w-[150px] space-y-2">
-                          <div className="flex justify-between text-xs font-medium">
-                            <span>Processing Pipeline</span>
-                            <span>{session.progress}%</span>
-                          </div>
-                          <Progress value={session.progress} className="h-2 bg-white/5" />
-                        </div>
-                      )}
-
-                      {/* Actions */}
-                      <div className="flex items-center gap-2 ml-auto">
-                        <Button variant="ghost" size="icon" className="rounded-xl hover:bg-white/5 text-muted-foreground hover:text-primary">
-                          <Eye className="h-5 w-5" />
-                        </Button>
-                        <Button variant="ghost" size="icon" className="rounded-xl hover:bg-white/5 text-muted-foreground hover:text-emerald-400">
-                          <Download className="h-5 w-5" />
-                        </Button>
-                        <Button variant="ghost" size="icon" className="rounded-xl hover:bg-white/5 text-muted-foreground">
-                          <ChevronRight className="h-5 w-5" />
-                        </Button>
                       </div>
                     </div>
-                  </CardContent>
-                </Card>
-              </motion.div>
-            );
-          })}
+
+                    {/* Dataset Info */}
+                    <div className="flex-1 min-w-[180px]">
+                      <div className="text-[10px] font-bold text-shade-70 uppercase tracking-widest mb-1">Dataset</div>
+                      <div className="text-lg font-light text-white">{session.dataset}</div>
+                    </div>
+
+                    {/* Meta Info */}
+                    <div className="flex gap-12">
+                      <div className="min-w-[100px]">
+                        <div className="text-[10px] font-bold text-shade-70 uppercase tracking-widest mb-1">Date</div>
+                        <div className="text-sm font-medium text-white">{new Date(session.created_at).toLocaleDateString()}</div>
+                      </div>
+                      <div className="min-w-[80px]">
+                        <div className="text-[10px] font-bold text-shade-70 uppercase tracking-widest mb-1">Assets</div>
+                        <div className="text-sm font-medium text-white">{session.assets_count || 0}</div>
+                      </div>
+                    </div>
+
+                    {/* Actions */}
+                    <div className="flex items-center gap-3 ml-auto">
+                      <button className="p-2.5 rounded-lg bg-dark-forest text-shade-50 hover:text-white transition-colors">
+                        <Eye className="h-4.5 w-4.5" />
+                      </button>
+                      <button className="p-2.5 rounded-lg bg-dark-forest text-shade-50 hover:text-emerald-500 transition-colors">
+                        <Download className="h-4.5 w-4.5" />
+                      </button>
+                      <button className="p-2.5 rounded-lg bg-blue-600/10 text-blue-500 hover:bg-blue-600/20 transition-all">
+                        <ChevronRight className="h-4.5 w-4.5" />
+                      </button>
+                    </div>
+                  </div>
+                  
+                  {/* Progress bar at bottom for processing */}
+                  {session.status === 'processing' && (
+                    <div className="h-1 w-full bg-void overflow-hidden">
+                      <motion.div 
+                        initial={{ width: 0 }}
+                        animate={{ width: `${session.progress || 0}%` }}
+                        className="h-full bg-blue-500"
+                        transition={{ duration: 1 }}
+                      />
+                    </div>
+                  )}
+                </motion.div>
+              );
+            })
+          )}
         </div>
       )}
     </div>

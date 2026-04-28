@@ -1,10 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Badge } from '@/components/ui/badge';
-import { Alert, AlertDescription } from '@/components/ui/alert';
 import { motion, AnimatePresence } from 'motion/react';
 import { 
   Activity, 
@@ -59,8 +55,8 @@ export default function Dashboard() {
       value: health.toUpperCase(),
       subValue: 'All systems operational',
       icon: Activity,
-      color: health === 'healthy' ? 'text-emerald-400' : health === 'offline' ? 'text-red-400' : 'text-yellow-400',
-      bg: health === 'healthy' ? 'bg-emerald-500/10' : health === 'offline' ? 'bg-red-500/10' : 'bg-yellow-500/10'
+      color: 'text-emerald-400',
+      bg: 'bg-emerald-500/10'
     },
     {
       title: 'Active Sessions',
@@ -89,118 +85,110 @@ export default function Dashboard() {
   ];
 
   return (
-    <div className="space-y-8 animate-in fade-in duration-500">
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+    <div className="max-w-6xl mx-auto space-y-10 py-4">
+      {/* Hero Header */}
+      <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
         <div>
-          <h2 className="text-4xl font-bold tracking-tight">Mission Control</h2>
-          <p className="text-muted-foreground mt-1">
-            Real-time system overview and dataset orchestration
-          </p>
+          <h1 className="text-5xl font-light tracking-tight text-white mb-2">Mission Control</h1>
+          <p className="text-shade-50 text-lg">Real-time system overview and dataset orchestration</p>
         </div>
-        <div className="flex items-center gap-2">
-          <Badge variant="outline" className="px-3 py-1 bg-white/5 border-white/10">
-            <span className={`w-2 h-2 rounded-full mr-2 ${health === 'healthy' ? 'bg-emerald-500' : 'bg-red-500'} animate-pulse`} />
-            System {health}
-          </Badge>
+        <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-dark-forest border border-white/5">
+          <span className="relative flex h-2 w-2">
+            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+            <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+          </span>
+          <span className="text-[11px] font-bold uppercase tracking-wider text-emerald-500">System healthy</span>
         </div>
       </div>
 
       {/* Stats Cards */}
-      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         {stats.map((stat, i) => (
           <motion.div
             key={i}
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: i * 0.1 }}
+            transition={{ delay: i * 0.05 }}
+            className="shopify-card p-6 group"
           >
-            <Card className="glass-card border-white/5 hover:border-white/20 transition-all group">
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium text-muted-foreground">{stat.title}</CardTitle>
-                <div className={`p-2 rounded-lg ${stat.bg} ${stat.color} group-hover:scale-110 transition-transform`}>
-                  <stat.icon className="h-4 w-4" />
-                </div>
-              </CardHeader>
-              <CardContent>
-                <div className="text-3xl font-bold">{stat.value}</div>
-                <p className="text-xs text-muted-foreground mt-1 flex items-center gap-1">
-                  {stat.subValue}
-                </p>
-              </CardContent>
-            </Card>
+            <div className="flex justify-between items-start mb-6">
+              <span className="text-[11px] font-bold uppercase tracking-widest text-shade-70">{stat.title}</span>
+              <div className={`p-2 rounded-full ${stat.bg} ${stat.color} group-hover:scale-110 transition-transform`}>
+                <stat.icon className="h-4 w-4" />
+              </div>
+            </div>
+            <div className="space-y-1">
+              <h3 className="text-3xl font-light text-white">{stat.value}</h3>
+              <p className="text-xs text-shade-50 font-medium">{stat.subValue}</p>
+            </div>
           </motion.div>
         ))}
       </div>
 
-      <div className="grid gap-6 lg:grid-cols-3">
-        {/* Process Dataset Section */}
-        <Card className="lg:col-span-2 glass-card border-white/5">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Play className="w-5 h-5 text-primary" />
-              Dataset Orchestrator
-            </CardTitle>
-            <CardDescription>
-              Deploy the content engine on a new media collection
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-6">
-            <div className="space-y-4 p-6 rounded-2xl bg-white/5 border border-white/5">
-              <div className="flex flex-col gap-2">
-                <label className="text-sm font-medium text-muted-foreground ml-1">Dataset Identifier</label>
-                <div className="flex gap-3">
-                  <Input
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Dataset Orchestrator */}
+        <div className="lg:col-span-2 shopify-card overflow-hidden">
+          <div className="p-8 border-b border-white/5 flex items-center gap-3">
+            <div className="p-2 rounded-lg bg-blue-600/10 text-blue-500">
+              <Play className="h-5 w-5" />
+            </div>
+            <div>
+              <h2 className="text-xl font-light text-white">Dataset Orchestrator</h2>
+              <p className="text-xs text-shade-50">Deploy the content engine on a new media collection</p>
+            </div>
+          </div>
+          
+          <div className="p-8">
+            <div className="bg-void/50 border border-white/5 rounded-xl p-8 space-y-6">
+              <div className="space-y-3">
+                <label className="text-[11px] font-bold uppercase tracking-widest text-shade-70 ml-1">Dataset Identifier</label>
+                <div className="flex flex-col sm:flex-row gap-4">
+                  <input
                     value={datasetName}
                     onChange={e => setDatasetName(e.target.value)}
                     placeholder="e.g. event_dataset_1_conference"
-                    className="h-12 bg-black/20 border-white/10 focus:border-primary/50 transition-all rounded-xl"
+                    className="flex-1 h-12 bg-dark-forest border border-white/5 rounded-lg px-6 text-sm text-white focus:ring-1 focus:ring-blue-500 outline-none transition-all placeholder:text-shade-70"
                   />
-                  <Button 
+                  <button 
                     onClick={handleProcess} 
                     disabled={loading}
-                    className="h-12 px-8 rounded-xl shadow-lg shadow-primary/20 hover:scale-105 active:scale-95 transition-all"
+                    className="btn-pill h-12 bg-blue-600 hover:bg-blue-500 text-white flex items-center justify-center gap-3 shadow-lg shadow-blue-900/40 disabled:opacity-50 disabled:cursor-not-allowed group min-w-[180px]"
                   >
                     {loading ? (
                       <>
-                        <Activity className="mr-2 h-5 w-5 animate-spin" />
+                        <Activity className="h-4 w-4 animate-spin" />
                         Deploying...
                       </>
                     ) : (
                       <>
-                        <Play className="mr-2 h-5 w-5" />
-                        Run Pipeline
+                        <Play className="h-4 w-4 fill-white" />
+                        <span className="text-xs font-bold uppercase tracking-widest">Run Pipeline</span>
                       </>
                     )}
-                  </Button>
+                  </button>
                 </div>
               </div>
+
+              <AnimatePresence>
+                {error && (
+                  <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} className="p-4 rounded-lg bg-red-500/10 border border-red-500/20 text-red-400 text-xs flex items-center gap-3">
+                    <XCircle className="h-4 w-4 shrink-0" />
+                    <span>{error}</span>
+                  </motion.div>
+                )}
+                {result && (
+                  <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} className="p-4 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs flex items-center gap-3">
+                    <CheckCircle2 className="h-4 w-4 shrink-0" />
+                    <span><strong>Success!</strong> {result.message}</span>
+                  </motion.div>
+                )}
+              </AnimatePresence>
             </div>
+          </div>
+        </div>
 
-            <AnimatePresence>
-              {error && (
-                <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }}>
-                  <Alert variant="destructive" className="bg-red-500/10 border-red-500/20 text-red-400">
-                    <XCircle className="h-4 w-4" />
-                    <AlertDescription>{error}</AlertDescription>
-                  </Alert>
-                </motion.div>
-              )}
-              {result && (
-                <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }}>
-                  <Alert className="bg-emerald-500/10 border-emerald-500/20 text-emerald-400">
-                    <CheckCircle2 className="h-4 w-4" />
-                    <AlertDescription>
-                      <strong>Success!</strong> {result.message}
-                    </AlertDescription>
-                  </Alert>
-                </motion.div>
-              )}
-            </AnimatePresence>
-          </CardContent>
-        </Card>
-
-        {/* Quick Access */}
-        <div className="flex flex-col gap-6">
+        {/* Quick Access Sidebar */}
+        <div className="flex flex-col gap-4">
           {[
             { title: 'Processing Queue', desc: 'Monitor active sessions', icon: FolderOpen, path: '/sessions' },
             { title: 'Asset Repository', desc: 'Browse generated media', icon: ImageIcon, path: '/outputs' },
@@ -211,26 +199,19 @@ export default function Dashboard() {
               initial={{ opacity: 0, x: 20 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ delay: 0.3 + (i * 0.1) }}
+              onClick={() => navigate(action.path)}
+              className="shopify-card p-6 flex items-center justify-between group cursor-pointer hover:bg-white/5 active:scale-[0.98]"
             >
-              <Card 
-                className="cursor-pointer glass-card border-white/5 hover:border-primary/30 hover:bg-white/5 transition-all group" 
-                onClick={() => navigate(action.path)}
-              >
-                <CardHeader className="p-5">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-4">
-                      <div className="p-3 rounded-xl bg-white/5 text-muted-foreground group-hover:text-primary transition-colors">
-                        <action.icon className="w-5 h-5" />
-                      </div>
-                      <div>
-                        <CardTitle className="text-lg">{action.title}</CardTitle>
-                        <CardDescription className="text-xs">{action.desc}</CardDescription>
-                      </div>
-                    </div>
-                    <ArrowUpRight className="w-4 h-4 text-muted-foreground group-hover:translate-x-1 group-hover:-translate-y-1 transition-transform" />
-                  </div>
-                </CardHeader>
-              </Card>
+              <div className="flex items-center gap-5">
+                <div className="p-3 rounded-xl bg-dark-forest text-shade-50 group-hover:text-white transition-colors">
+                  <action.icon className="h-5 w-5" />
+                </div>
+                <div>
+                  <h3 className="text-base font-medium text-white">{action.title}</h3>
+                  <p className="text-[11px] text-shade-50 font-medium">{action.desc}</p>
+                </div>
+              </div>
+              <ArrowUpRight className="h-4 w-4 text-shade-70 group-hover:text-white group-hover:translate-x-1 group-hover:-translate-y-1 transition-all" />
             </motion.div>
           ))}
         </div>
