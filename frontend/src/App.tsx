@@ -7,6 +7,7 @@ import Sessions from './pages/Sessions';
 import Outputs from './pages/Outputs';
 import ApiDocs from './pages/ApiDocs';
 import { AnimatePresence, motion } from 'motion/react';
+import { Toaster } from 'sonner';
 import './index.css';
 
 function PageWrapper({ children }: { children: React.ReactNode }) {
@@ -42,6 +43,7 @@ function AnimatedRoutes() {
 function App() {
   return (
     <AppProvider>
+      <Toaster theme="dark" position="bottom-right" richColors />
       <BrowserRouter>
         <AnimatedRoutes />
       </BrowserRouter>

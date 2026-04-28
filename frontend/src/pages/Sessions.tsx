@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { motion } from 'motion/react';
 import { 
   Clock, 
@@ -24,6 +25,7 @@ interface Session {
 }
 
 export default function Sessions() {
+  const navigate = useNavigate();
   const [sessions, setSessions] = useState<Session[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -148,13 +150,24 @@ export default function Sessions() {
 
                     {/* Actions */}
                     <div className="flex items-center gap-3 ml-auto">
-                      <button className="p-2.5 rounded-lg bg-dark-forest text-shade-50 hover:text-white transition-colors">
+                      <button 
+                        onClick={() => navigate(`/outputs?session=${session.session_id}`)}
+                        className="p-2.5 rounded-lg bg-dark-forest text-shade-50 hover:text-white transition-colors"
+                        title="View Assets"
+                      >
                         <Eye className="h-4.5 w-4.5" />
                       </button>
-                      <button className="p-2.5 rounded-lg bg-dark-forest text-shade-50 hover:text-emerald-500 transition-colors">
+                      <button 
+                        onClick={() => window.open(`http://localhost:8000/api/v1/sessions/${session.session_id}/download-all`, '_blank')}
+                        className="p-2.5 rounded-lg bg-dark-forest text-shade-50 hover:text-emerald-500 transition-colors"
+                        title="Download Bundle (.zip)"
+                      >
                         <Download className="h-4.5 w-4.5" />
                       </button>
-                      <button className="p-2.5 rounded-lg bg-blue-600/10 text-blue-500 hover:bg-blue-600/20 transition-all">
+                      <button 
+                        onClick={() => navigate(`/outputs?session=${session.session_id}`)}
+                        className="p-2.5 rounded-lg bg-blue-600/10 text-blue-500 hover:bg-blue-600/20 transition-all"
+                      >
                         <ChevronRight className="h-4.5 w-4.5" />
                       </button>
                     </div>

@@ -30,7 +30,7 @@ async def list_sessions():
                     "stage": data.get("stage", "unknown"),
                     "created_at": datetime.fromtimestamp(status_file.stat().st_mtime).isoformat(),
                     "total_assets": len(data.get("outputs", {})),
-                    "event_name": session_id.replace("session_", "event_")
+                    "event_name": data.get("dataset_name", session_id.replace("session_", "event_"))
                 })
         except Exception as e:
             print(f"Error reading {status_file.name}: {e}")
@@ -40,6 +40,29 @@ async def list_sessions():
 
     return {"sessions": sessions}
 
+
+@router.get("/text-content")
+async def get_text_content(path: str):
+    """Securely fetch the text content of a generated asset."""
+    try:
+        outputs_dir = Path(__file__).parent.parent.parent.parent / "outputs"
+        # Sanitize path to prevent directory traversal
+        filename = path.split("/")[-1]
+        category = path.split("/")[-2] if "/" in path else ""
+        
+        target_path = outputs_dir / category / filename
+        
+        if not target_path.exists():
+            # Try without category
+            target_path = outputs_dir / filename
+            
+        if not target_path.exists() or not target_path.is_file():
+            raise HTTPException(status_code=404, detail="File not found")
+            
+        with open(target_path, "r") as f:
+            return {"content": f.read()}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
 @router.get("/{session_id}")
 async def get_session(session_id: str):
@@ -116,4 +139,42 @@ async def get_session_outputs(session_id: str):
                 "created_at": datetime.fromtimestamp(reel.stat().st_mtime).isoformat()
             })
 
-    return {"outputs": outputs}
+from fastapi.responses import FileResponse
+import shutil
+import tempfile
+
+@router.get("/{session_id}/download-all")
+async def download_all_session_assets(session_id: str):
+    """Bundle all assets for a session into a zip file for download."""
+    outputs_dir = Path(__file__).parent.parent.parent.parent / "outputs"
+    
+    # Create a temporary directory to gather files
+    with tempfile.TemporaryDirectory() as tmpdir:
+        tmp_path = Path(tmpdir)
+        session_export_dir = tmp_path / f"export_{session_id}"
+        session_export_dir.mkdir()
+        
+        # Find all assets for this session
+        found_any = False
+        
+        # Scan all subdirectories in outputs
+        for category in ["linkedin", "instagram", "stories", "case_studies", "reels"]:
+            cat_dir = outputs_dir / category
+            if cat_dir.exists():
+                for asset in cat_dir.glob(f"{session_id}_*"):
+                    shutil.copy2(asset, session_export_dir / asset.name)
+                    found_any = True
+        
+        if not found_any:
+            raise HTTPException(status_code=404, detail="No assets found for this session")
+            
+        # Create zip
+        zip_path = tmp_path / f"{session_id}_assets"
+        shutil.make_archive(str(zip_path), 'zip', session_export_dir)
+        
+        return FileResponse(
+            path=f"{zip_path}.zip",
+            filename=f"{session_id}_content_bundle.zip",
+            media_type="application/x-zip-compressed"
+        )
+
