@@ -1,0 +1,21 @@
+# Datasets
+demo_dataset/
+event_datasets/
+
+# Node
+node_modules/
+dist/
+.env
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+venv/
+.venv/
+env/
+.env/
+
+# OS
+.DS_Store
+Thumbs.db
