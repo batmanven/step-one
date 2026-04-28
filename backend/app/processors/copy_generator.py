@@ -2,17 +2,18 @@
 Copy Generator: Generates platform-specific copy using true
 visual grounding with Gemini Vision models.
 """
-import os
 from typing import Dict, List
 from pathlib import Path
 from PIL import Image
+import json
+from app.config import settings
 
 class CopyGenerator:
     def __init__(self):
-        self.gemini_api_key = os.environ.get("GEMINI_API_KEY")
+        self.gemini_api_key = settings.gemini_api_key
     
     def generate_all(self, selected_assets: List[Dict], dataset_name: str) -> Dict[str, str]:
-        """Generate copy for LinkedIn and Instagram"""
+        """Generate copy for LinkedIn, Instagram, and Stories"""
         
         event_name = self._extract_event_name(dataset_name)
         
@@ -52,9 +53,17 @@ Swipe to see the highlights →
 
 #EventLife #{event_name.replace(' ', '')} #GoodTimes #Networking #Innovation"""
         
+        stories = json.dumps([
+            {"title": "The Event Begins", "subtitle": "Excitement fills the room"},
+            {"title": "Key Moments", "subtitle": "Powerful presentations"},
+            {"title": "Networking", "subtitle": "Connecting with leaders"},
+            {"title": "Memories Made", "subtitle": "Unforgettable moments"}
+        ])
+        
         return {
             "linkedin": linkedin,
-            "instagram": instagram
+            "instagram": instagram,
+            "stories_json": stories
         }
     
     def _generate_with_gemini(self, selected_assets: List[Dict], event_name: str) -> Dict[str, str]:
@@ -62,7 +71,6 @@ Swipe to see the highlights →
         import google.generativeai as genai
         
         genai.configure(api_key=self.gemini_api_key)
-        # Use gemini-1.5-flash for speed and multimodal capabilities
         model = genai.GenerativeModel('gemini-1.5-flash')
         
         # Prepare the visual context
@@ -79,39 +87,40 @@ Swipe to see the highlights →
             except Exception as e:
                 print(f"Failed to load image for Gemini: {e}")
 
-        # LinkedIn Prompt
-        linkedin_prompt = f"""
-        You are an experiential marketing professional writing a LinkedIn post.
-        You attended the event: "{event_name}".
+        # Bulk Prompt to save API calls
+        prompt = f"""
+        You are an elite experiential marketing professional covering the event: "{event_name}".
         
-        CRITICAL INSTRUCTION: I have attached photos from the event. You MUST write the post based on what is ACTUALLY visible in these photos. 
-        - If you see a crowded audience, mention the great turnout.
-        - If you see a speaker on stage, mention the keynote or panel.
-        - If you see networking, mention the connections made.
-        DO NOT hallucinate details that are not in the photos.
-        
-        Tone: Professional, insightful, 200-300 words.
-        Format: Include 3 bullet points of highlights derived from the images.
-        Add 3-4 hashtags at the end.
+        CRITICAL INSTRUCTION: I have attached 4 photos from the event. You MUST write all content based strictly on what is ACTUALLY visible in these photos. 
+        DO NOT hallucinate details. If there is a panel, mention it. If there is a crowd, mention the turnout.
+
+        Please generate three pieces of content and return them exactly in the following JSON format. Do not include markdown code blocks (```json), just raw JSON:
+        {{
+            "linkedin": "Your 200-word professional post with 3 bullet points and hashtags.",
+            "instagram": "Your 100-word fun, visual, emoji-rich caption with hashtags.",
+            "stories": [
+                {{"title": "Short punchy title for frame 1 (max 15 chars)", "subtitle": "Context for frame 1 (max 40 chars)"}},
+                {{"title": "Title for frame 2", "subtitle": "Context for frame 2"}},
+                {{"title": "Title for frame 3", "subtitle": "Context for frame 3"}},
+                {{"title": "Title for frame 4", "subtitle": "Context for frame 4"}}
+            ]
+        }}
         """
         
-        linkedin_content = [linkedin_prompt] + images
-        linkedin_response = model.generate_content(linkedin_content)
+        content = [prompt] + images
+        response = model.generate_content(content)
         
-        # Instagram Prompt
-        instagram_prompt = f"""
-        You are an event attendee posting an Instagram caption about "{event_name}".
-        
-        CRITICAL INSTRUCTION: Look at the attached photos. Describe the VIBE and energy based strictly on what you see in the images.
-        
-        Tone: Fun, visual, emoji-rich, 100-150 words.
-        Start with an emoji. Add 4-5 relevant hashtags at the end.
-        """
-        
-        instagram_content = [instagram_prompt] + images
-        instagram_response = model.generate_content(instagram_content)
-        
-        return {
-            "linkedin": linkedin_response.text.strip(),
-            "instagram": instagram_response.text.strip()
-        }
+        text_resp = response.text.strip()
+        if text_resp.startswith("```json"):
+            text_resp = text_resp.replace("```json", "").replace("```", "").strip()
+            
+        try:
+            data = json.loads(text_resp)
+            return {
+                "linkedin": data.get("linkedin", ""),
+                "instagram": data.get("instagram", ""),
+                "stories_json": json.dumps(data.get("stories", []))
+            }
+        except Exception as e:
+            print(f"Failed to parse JSON from Gemini: {e}")
+            return self._generate_with_templates(event_name)

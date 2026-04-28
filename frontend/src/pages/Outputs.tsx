@@ -15,7 +15,7 @@ import { apiRequest } from '@/lib/api'
 
 interface Output {
   id: string
-  type: 'collage' | 'story' | 'case_study' | 'linkedin_post'
+  type: 'collage' | 'story' | 'case_study' | 'linkedin_post' | 'reel'
   title: string
   session_id: string
   created_at: string
@@ -38,7 +38,7 @@ export default function Outputs() {
               const sessionOutputs = outputData.outputs || []
               return sessionOutputs.map((o: any) => ({
                 ...o,
-                ratio: o.type === 'story' ? 'aspect-[9/16]' : 'aspect-video'
+                ratio: (o.type === 'story' || o.type === 'reel') ? 'aspect-[9/16]' : 'aspect-video'
               }))
             })
             .catch(() => [])
@@ -59,6 +59,8 @@ export default function Outputs() {
         return { icon: ImageIcon, label: 'Collage' }
       case 'story':
         return { icon: Camera, label: 'Story' }
+      case 'reel':
+        return { icon: ExternalLink, label: 'Reel' }
       case 'case_study':
         return { icon: FileText, label: 'Case Study' }
       case 'linkedin_post':
@@ -191,13 +193,22 @@ transition
                     >
                       <div className="bg-dark-forest border border-white/5 rounded-2xl overflow-hidden group hover:border-white/10 transition">
                         <div className={`relative ${output.ratio} bg-black/40 overflow-hidden`}>
-                          {output.url && (
+                          {output.url && output.type === 'reel' ? (
+                            <video
+                              src={`http://localhost:8000${output.url}`}
+                              className="w-full h-full object-cover transition duration-500 group-hover:scale-105"
+                              autoPlay
+                              loop
+                              muted
+                              playsInline
+                            />
+                          ) : output.url ? (
                             <img
                               src={`http://localhost:8000${output.url}`}
                               alt={output.title}
                               className="w-full h-full object-cover transition duration-500 group-hover:scale-105"
                             />
-                          )}
+                          ) : null}
 
                           <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition flex items-end p-4">
                             <div className="flex gap-2 w-full">

@@ -102,5 +102,18 @@ async def get_session_outputs(session_id: str):
             "url": f"/outputs/case_studies/{case_study.name}",
             "created_at": datetime.fromtimestamp(case_study.stat().st_mtime).isoformat()
         })
+        
+    # Get reels
+    reels_dir = outputs_dir / "reels"
+    if reels_dir.exists():
+        for reel in reels_dir.glob(f"{session_id}_*.mp4"):
+            outputs.append({
+                "id": reel.stem,
+                "type": "reel",
+                "title": "Instagram Reel",
+                "session_id": session_id,
+                "url": f"/outputs/reels/{reel.name}",
+                "created_at": datetime.fromtimestamp(reel.stat().st_mtime).isoformat()
+            })
 
     return {"outputs": outputs}

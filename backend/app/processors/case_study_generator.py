@@ -5,12 +5,12 @@ using Gemini to synthesize event assets and generated copy.
 from pathlib import Path
 from typing import List, Dict
 from datetime import datetime
-import os
 import json
+from app.config import settings
 
 class CaseStudyGenerator:
     def __init__(self):
-        self.gemini_api_key = os.environ.get("GEMINI_API_KEY")
+        self.gemini_api_key = settings.gemini_api_key
         
     def generate(self, assets: List[Dict], copies: Dict[str, str], 
                  dataset_name: str, session_id: str) -> Path:

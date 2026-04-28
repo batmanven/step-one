@@ -7,23 +7,34 @@ from pathlib import Path
 from typing import List, Dict
 import cv2
 import numpy as np
+import json
 
 class StoryGenerator:
     def __init__(self):
         # Load Haar Cascade for face detection
         self.face_cascade = cv2.CascadeClassifier(cv2.data.haarcascades + 'haarcascade_frontalface_default.xml')
 
-    def create_stories(self, assets: List[Dict], session_id: str) -> List[Path]:
+    def create_stories(self, assets: List[Dict], session_id: str, stories_json: str = None) -> List[Path]:
         """Create 3-4 Instagram Story frames with sequential narrative"""
         selected = assets[:4]
         stories = []
         
-        narratives = [
-            ("The Event Begins", "Excitement fills the room as attendees arrive"),
-            ("Key Moments", "Engaging sessions and powerful presentations"),
-            ("Networking", "Connecting with industry leaders and peers"),
-            ("Memories Made", "Unforgettable moments captured forever")
-        ]
+        narratives = []
+        if stories_json:
+            try:
+                data = json.loads(stories_json)
+                for item in data:
+                    narratives.append((item.get("title", "Event"), item.get("subtitle", "Highlights")))
+            except Exception as e:
+                print(f"Failed to parse stories_json: {e}")
+                
+        if not narratives:
+            narratives = [
+                ("The Event Begins", "Excitement fills the room as attendees arrive"),
+                ("Key Moments", "Engaging sessions and powerful presentations"),
+                ("Networking", "Connecting with industry leaders and peers"),
+                ("Memories Made", "Unforgettable moments captured forever")
+            ]
         
         output_dir = Path("outputs/stories")
         output_dir.mkdir(parents=True, exist_ok=True)

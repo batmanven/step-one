@@ -64,6 +64,7 @@ async def run_processing(dataset_name: str, session_id: str, dataset_path: Path)
     from app.processors.collage_generator import CollageGenerator
     from app.processors.story_generator import StoryGenerator
     from app.processors.case_study_generator import CaseStudyGenerator
+    from app.processors.video_generator import VideoGenerator
     import json
     
     status = {
@@ -90,7 +91,7 @@ async def run_processing(dataset_name: str, session_id: str, dataset_path: Path)
         
         # Stage 2: Copy Generation
         status["stage"] = "copy_generation"
-        status["progress"] = 40
+        status["progress"] = 30
         with open(status_file, 'w') as f:
             json.dump(status, f)
         
@@ -99,7 +100,7 @@ async def run_processing(dataset_name: str, session_id: str, dataset_path: Path)
         
         # Stage 3: Collage Generation
         status["stage"] = "collage_generation"
-        status["progress"] = 60
+        status["progress"] = 50
         with open(status_file, 'w') as f:
             json.dump(status, f)
         
@@ -108,14 +109,24 @@ async def run_processing(dataset_name: str, session_id: str, dataset_path: Path)
         
         # Stage 4: Story Generation
         status["stage"] = "story_generation"
-        status["progress"] = 80
+        status["progress"] = 70
         with open(status_file, 'w') as f:
             json.dump(status, f)
         
         story_gen = StoryGenerator()
-        stories = story_gen.create_stories(selected_assets[:4], session_id)
+        stories_json = copies.get("stories_json", None)
+        stories = story_gen.create_stories(selected_assets[:4], session_id, stories_json)
         
-        # Stage 5: Case Study
+        # Stage 5: Video Reel Generation
+        status["stage"] = "video_generation"
+        status["progress"] = 80
+        with open(status_file, 'w') as f:
+            json.dump(status, f)
+            
+        video_gen = VideoGenerator(dataset_path)
+        reel_path = video_gen.create_highlight_reel(session_id, target_duration=30)
+        
+        # Stage 6: Case Study
         status["stage"] = "case_study"
         status["progress"] = 90
         with open(status_file, 'w') as f:
@@ -132,6 +143,7 @@ async def run_processing(dataset_name: str, session_id: str, dataset_path: Path)
             "linkedin_caption": copies.get("linkedin", ""),
             "instagram_caption": copies.get("instagram", ""),
             "stories": [str(s) for s in stories] if stories else [],
+            "video_reel": str(reel_path) if reel_path else None,
             "case_study": str(case_study_path) if case_study_path else None
         }
         with open(status_file, 'w') as f:
