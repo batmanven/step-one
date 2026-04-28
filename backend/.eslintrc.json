@@ -1,0 +1,12 @@
+{
+  "env": {
+    "python": 3.11
+  },
+  "parser": "python",
+  "plugins": ["pylint"],
+  "rules": {
+    "indent": ["error", 4],
+    "quotes": ["error", "double"],
+    "semi": ["error", "always"]
+  }
+}
