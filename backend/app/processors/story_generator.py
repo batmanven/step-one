@@ -182,12 +182,26 @@ class StoryGenerator:
         # Brand/Session Indicator (Bottom Left)
         draw.text((60, height - 80), f"#{session_id.upper()}", fill=(100, 100, 150), font=meta_font)
 
-        # Sequential Indicator (Bottom Right) - More stylish
+        # Sequential Indicator (Bottom Right) - Perfectly Centered & Premium
+        indicator_x = width - 100
+        indicator_y = height - 100
+        circle_radius = 45
+
+        # Draw clean, thin outline circle
         draw.ellipse(
-            [width - 150, height - 150, width - 50, height - 50], outline=(100, 100, 255), width=3
+            [
+                indicator_x - circle_radius,
+                indicator_y - circle_radius,
+                indicator_x + circle_radius,
+                indicator_y + circle_radius,
+            ],
+            outline=(100, 100, 255),
+            width=2,
         )
+
+        # Use "mm" anchor and exact coordinates for perfect mathematical centering
         draw.text(
-            (width - 100, height - 100),
+            (indicator_x, indicator_y),
             f"{frame_num}",
             fill=(255, 255, 255),
             font=title_font,

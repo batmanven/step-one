@@ -174,12 +174,12 @@ class VideoGenerator:
         return selected_timestamps
         
     def _extract_clip(self, video_path: Path, start_time: float, duration: int, out_path: Path):
-        """Use FFmpeg to quickly extract a clip without re-encoding video"""
+        """Use FFmpeg to quickly extract a clip. We use -ss BEFORE -i for fast seeking and accurate cut."""
         try:
             (
                 ffmpeg
-                .input(str(video_path), ss=start_time, t=duration)
-                .output(str(out_path), c='copy', loglevel="error")
+                .input(str(video_path), ss=start_time)
+                .output(str(out_path), t=duration, c='copy', loglevel="error")
                 .overwrite_output()
                 .run(capture_stdout=True, capture_stderr=True)
             )
@@ -187,7 +187,7 @@ class VideoGenerator:
             print(f"FFmpeg error: {e.stderr.decode()}")
 
     def _concatenate_clips(self, clips: List[Path], out_path: Path):
-        """Use FFmpeg to concatenate the extracted clips"""
+        """Use FFmpeg to concatenate the extracted clips correctly without re-encoding loops"""
         # Create a concat demuxer file
         list_file = self.temp_dir / "concat_list.txt"
         with open(list_file, "w") as f:
@@ -196,6 +196,9 @@ class VideoGenerator:
                 f.write(f"file '{clip.absolute()}'\n")
                 
         try:
+            # We use -f concat -safe 0 -i list.txt -c copy to ensure we don't re-encode 
+            # and just stitch the actual unique clips together.
+            # The 'loop' behavior in some ffmpeg versions happens if parameters aren't strictly set.
             (
                 ffmpeg
                 .input(str(list_file), format='concat', safe=0)
