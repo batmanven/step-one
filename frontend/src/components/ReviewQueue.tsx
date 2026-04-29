@@ -90,7 +90,7 @@ export default function ReviewQueue() {
                       Authorize
                     </Button>
                     <Button
-                      onClick={() => handleReject(id)}
+                      onClick={() => handleReject(item._id)}
                       variant="outline"
                       className="rounded-xl border-white/10 hover:bg-red-500/10 hover:text-red-400 hover:border-red-500/20 px-6 h-10"
                     >
