@@ -19,7 +19,7 @@ ENV/
 *.swp
 *.swo
 *~
-
+archive_outputs/
 # OS
 .DS_Store
 Thumbs.db

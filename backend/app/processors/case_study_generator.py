@@ -2,64 +2,82 @@
 Case Study Generator: Creates structured case study documents
 using Gemini to synthesize event assets and generated copy.
 """
+
 from pathlib import Path
 from typing import List, Dict
 from datetime import datetime
 import json
 from app.config import settings
 
+
 class CaseStudyGenerator:
     def __init__(self):
         self.gemini_api_key = settings.gemini_api_key
-        
-    def generate(self, assets: List[Dict], copies: Dict[str, str], 
-                 dataset_name: str, session_id: str) -> Path:
+
+    def generate(
+        self, assets: List[Dict], copies: Dict[str, str], dataset_name: str, session_id: str
+    ) -> Path:
         """Generate a structured case study document"""
-        
+
         event_name = dataset_name.replace("event_dataset_", "").replace("_", " ").title()
-        
+
         # Prepare data for LLM
         avg_score = self._avg_score(assets)
         total_assets = len(assets)
         high_quality_count = sum(1 for a in assets if a.get("score", 0) > 0.7)
-        
+
         # Extract metadata summaries
         total_people = sum(a.get("metadata", {}).get("people_count", 0) for a in assets)
         total_engaged = sum(a.get("metadata", {}).get("engaged_faces", 0) for a in assets)
-        
+
         asset_summary = [
             f"Image {i+1} (Score: {a['score']:.2f}): {a.get('rationale', 'Good quality')}"
             for i, a in enumerate(assets[:10])
         ]
-        
+
         if self.gemini_api_key:
             try:
                 content = self._generate_with_gemini(
-                    event_name, total_assets, avg_score, high_quality_count,
-                    total_people, total_engaged, asset_summary, copies
+                    event_name,
+                    total_assets,
+                    avg_score,
+                    high_quality_count,
+                    total_people,
+                    total_engaged,
+                    asset_summary,
+                    copies,
                 )
             except Exception as e:
                 print(f"Gemini API failed for case study: {e}")
                 content = self._fallback_template(event_name, assets, copies)
         else:
             content = self._fallback_template(event_name, assets, copies)
-            
+
         # Save to file
         output_dir = Path("outputs/case_studies")
         output_dir.mkdir(parents=True, exist_ok=True)
         output_path = output_dir / f"{session_id}_case_study.txt"
-        
-        with open(output_path, 'w') as f:
+
+        with open(output_path, "w") as f:
             f.write(content)
-        
+
         return output_path
 
-    def _generate_with_gemini(self, event_name, total_assets, avg_score, high_quality, 
-                             total_people, total_engaged, asset_summary, copies):
-        import google.generativeai as genai
-        genai.configure(api_key=self.gemini_api_key)
-        model = genai.GenerativeModel('gemini-1.5-pro')
-        
+    def _generate_with_gemini(
+        self,
+        event_name,
+        total_assets,
+        avg_score,
+        high_quality,
+        total_people,
+        total_engaged,
+        asset_summary,
+        copies,
+    ):
+        from google import genai
+
+        client = genai.Client(api_key=self.gemini_api_key)
+
         prompt = f"""
         You are an elite marketing analyst. Write a professional Case Study for the experiential marketing event: "{event_name}".
         
@@ -89,10 +107,10 @@ class CaseStudyGenerator:
         
         Tone: Analytical, confident, professional.
         """
-        
-        response = model.generate_content(prompt)
+
+        response = client.models.generate_content(model="gemini-1.5-pro", contents=prompt)
         return response.text
-        
+
     def _fallback_template(self, event_name, assets, copies):
         """Fallback template if API fails"""
         return f"""
