@@ -79,33 +79,31 @@ class CaseStudyGenerator:
         client = genai.Client(api_key=self.gemini_api_key)
 
         prompt = f"""
-        You are an elite marketing analyst. Write a professional Case Study for the experiential marketing event: "{event_name}".
+        You are an elite experiential marketing strategist for 'StepOne'. 
+        Write a professional, human-centric Case Study for the event: "{event_name}".
         
-        Use the following ACTUAL DATA gathered by our AI pipeline to write a factual, data-driven report. Do not hallucinate details outside of this data.
+        CONTEXT FROM HACKATHON BRIEF:
+        - Venue: Bharat Mandapam
+        - Scale: 1,200+ delegates
+        - Key VIP: Chief Guest Shri Nitin Gadkari
+        - Focus: Sustainability, Innovation, Global Metal Trade
+        - StepOne Role: End-to-end ops, Stage Design, AV/Lighting, Protocol management.
         
-        DATA POINTS:
+        AI DATA POINTS (Use these for the 'Results' section):
         - Total Assets Processed: {total_assets}
         - High Quality Assets Selected: {high_quality}
-        - Average AI Quality Score: {avg_score:.2f}/1.0
-        - Total People Detected in Top Assets: {total_people}
-        - Highly Engaged/Smiling Faces Detected: {total_engaged}
+        - AI Quality Score: {avg_score:.2f}/1.0
+        - Attendee Engagement: {total_engaged} high-energy moments detected.
         
-        ASSET RATIONALES (What the AI saw):
-        {chr(10).join(asset_summary)}
+        STRUCTURE REQUIREMENT (DO NOT use bullet points, tell a STORY):
+        1. INTRODUCTION: About BME, the venue (Bharat Mandapam), and the massive scale.
+        2. THE PROBLEM: Detail the challenges of managing 1,200+ delegates and strict security protocol for VIPs like Nitin Gadkari.
+        3. THE IDEA: How StepOne designed the flow to balance a high-level summit with a busy industry expo.
+        4. THE APPROACH: Describe the operational precision, lighting/AV coordination, and protocol management.
+        5. THE EXECUTION: The story of the event days—from the Global CEO Forum to the launch of Vision 2030.
+        6. RESULTS: Use the AI metrics ({total_assets} assets, {total_engaged} energy points) to prove success and ROI.
         
-        GENERATED COPY:
-        LinkedIn: {copies.get('linkedin', 'N/A')}
-        Instagram: {copies.get('instagram', 'N/A')}
-        
-        FORMAT REQUIREMENT:
-        Create a beautiful, text-based report with the following sections (use markdown-style headers like === and ---):
-        1. Executive Summary
-        2. Event & Engagement Metrics (Incorporate the people/faces data here)
-        3. Visual Content Analysis (Summarize the asset rationales)
-        4. Marketing Outputs (Include the exact generated copy)
-        5. Conclusion & ROI Recommendations
-        
-        Tone: Analytical, confident, professional.
+        TONE: Clear, simple, human, and professional. Avoid jargon.
         """
 
         response = client.models.generate_content(model="gemini-1.5-pro", contents=prompt)
