@@ -12,7 +12,11 @@ import shutil
 
 class VideoGenerator:
     def __init__(self, dataset_path: Path):
+        # Support both 'video' and 'videos' naming
         self.videos_dir = dataset_path / "videos"
+        if not self.videos_dir.exists():
+            self.videos_dir = dataset_path / "video"
+            
         self.temp_dir = Path("outputs/temp_videos")
         
         # Check if ffmpeg is available

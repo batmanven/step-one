@@ -21,11 +21,14 @@ class AssetSelector:
     def __init__(self, dataset_path: Path):
         self.dataset_path = dataset_path
         self.images_dir = dataset_path / "images"
-        self.videos_dir = dataset_path / "videos"
         
-        # Ensure directories exist
+        # Support both 'video' and 'videos' naming
+        self.videos_dir = dataset_path / "videos"
+        if not self.videos_dir.exists():
+            self.videos_dir = dataset_path / "video"
+        
+        # Ensure image directory exists (videos are optional)
         self.images_dir.mkdir(parents=True, exist_ok=True)
-        self.videos_dir.mkdir(parents=True, exist_ok=True)
         
         self.yolo_model = None
         self.fer_detector = None

@@ -10,45 +10,45 @@ class SaliencyCropper:
     """Saliency-aware smart cropping for aspect ratio conversion"""
     
     def __init__(self):
-        """Initialize saliency detector"""
-        try:
-            # Use OpenCV's saliency detection
-            self.saliency = cv2.saliency.StaticSaliencySpectralResidual_create()
-            print("Saliency detector initialized")
-        except Exception as e:
-            print(f"Error initializing saliency detector: {e}")
-            self.saliency = None
+        """Initialize saliency detector with safe attribute checking"""
+        self.saliency = None
+        # Only attempt if the module and attribute exist
+        if hasattr(cv2, 'saliency') and hasattr(cv2.saliency, 'StaticSaliencySpectralResidual_create'):
+            try:
+                self.saliency = cv2.saliency.StaticSaliencySpectralResidual_create()
+                print("Premium Saliency Detector Initialized")
+            except Exception:
+                print("Falling back to Gradient Saliency Mode")
+        else:
+            print("System: Using Native Gradient Saliency (Smart Heatmap Mode)")
     
     def generate_saliency_map(self, image_path: str) -> Optional[np.ndarray]:
-        """
-        Generate saliency map for an image
-        
-        Args:
-            image_path: Path to image file
-            
-        Returns:
-            np.ndarray: Saliency map or None
-        """
-        if not self.saliency:
-            return None
-        
+        """Generate saliency map for an image with fallback for missing modules"""
         try:
-            image = cv2.imread(image_path)
-            if image is None:
+            img = cv2.imread(image_path)
+            if img is None:
                 return None
-            
-            # Convert to grayscale
-            gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
-            
-            # Compute saliency map
-            success, saliency_map = self.saliency.computeSaliency(gray)
-            
-            if success:
-                # Normalize to 0-255
-                saliency_map = (saliency_map * 255).astype(np.uint8)
-                return saliency_map
-            
-            return None
+
+            # Try using the specialized saliency module if available
+            if self.saliency:
+                try:
+                    success, saliency_map = self.saliency.computeSaliency(img)
+                    if success:
+                        # Normalize to 0-255
+                        return (saliency_map * 255).astype("uint8")
+                except Exception as e:
+                    print(f"Saliency computation failed, falling back: {e}")
+
+            # Fallback: Gradient-based saliency (Edge density)
+            gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+            grad_x = cv2.Sobel(gray, cv2.CV_16S, 1, 0, ksize=3)
+            grad_y = cv2.Sobel(gray, cv2.CV_16S, 0, 1, ksize=3)
+            abs_grad_x = cv2.convertScaleAbs(grad_x)
+            abs_grad_y = cv2.convertScaleAbs(grad_y)
+            mag = cv2.addWeighted(abs_grad_x, 0.5, abs_grad_y, 0.5, 0)
+            saliency_map = cv2.GaussianBlur(mag, (21, 21), 0)
+            saliency_map = cv2.equalizeHist(saliency_map)
+            return saliency_map
             
         except Exception as e:
             print(f"Error generating saliency map: {e}")
