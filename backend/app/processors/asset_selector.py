@@ -66,20 +66,24 @@ class AssetSelector:
                     "metadata": analysis['metadata']
                 })
         
-        # Sort by score descending to get the best quality pool
+        # Sort by score descending to see our quality distribution
         scored_assets.sort(key=lambda x: x["score"], reverse=True)
         
-        # Take the top 30 best images as our "Quality Pool"
-        quality_pool = scored_assets[:30]
+        # Filter for "Usable" images (score > 0.3) from the entire set of 100-200+ photos
+        usable_pool = [a for a in scored_assets if float(a['score']) > 0.3]
         
-        # Randomly sample top_n from this pool to ensure variety on every run
-        if len(quality_pool) > top_n:
-            final_selection = random.sample(quality_pool, top_n)
-            # Re-sort the final selection by their original quality score
+        # If we don't have enough "good" photos, lower the bar slightly
+        if len(usable_pool) < top_n:
+            usable_pool = scored_assets[:top_n * 2]
+            
+        # Randomly sample from the ENTIRE usable pool (could be 100+ images)
+        if len(usable_pool) > top_n:
+            final_selection = random.sample(usable_pool, top_n)
+            # Re-sort the final selection by score so the "best" of the batch are first
             final_selection.sort(key=lambda x: x["score"], reverse=True)
             return final_selection
         
-        return quality_pool[:top_n]
+        return scored_assets[:top_n]
     
     def _analyze_image(self, img_path: Path) -> Dict:
         """Run full AI analysis on an image"""

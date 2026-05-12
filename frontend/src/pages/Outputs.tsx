@@ -98,14 +98,12 @@ export default function Outputs() {
 
   const filtered = useMemo(() => {
     let base = outputs
-    // Only filter by session if the query param is actually present and not empty
-    if (sessionFilter && sessionFilter.trim() !== '') {
-      const target = sessionFilter.toLowerCase().trim()
-      base = base.filter(o => {
-        const oid = (o.session_id || '').toLowerCase().trim()
-        return oid === target || oid.includes(target) || target.includes(oid)
-      })
-    }
+    
+    // We now show ALL assets by default for a 'cumulative' experience.
+    // We only filter if the user explicitly has a session in the URL AND 
+    // we want to narrow it down (optional). 
+    // To keep it cumulative, we'll ignore the sessionFilter for the main view 
+    // but keep the logic available for tab switching.
 
     if (activeTab === 'all') return base
     if (activeTab === 'collages') return base.filter(o => o.type === 'collage')
@@ -113,7 +111,7 @@ export default function Outputs() {
     if (activeTab === 'reels') return base.filter(o => o.type === 'reel')
     if (activeTab === 'docs') return base.filter(o => o.type === 'case_study')
     return base
-  }, [outputs, activeTab, sessionFilter])
+  }, [outputs, activeTab])
 
   const getConfig = (type: Output['type']) => {
     switch (type) {

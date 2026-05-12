@@ -59,8 +59,12 @@ Swipe to see the highlights →
             [
                 {"title": "The Event Begins", "subtitle": "Excitement fills the room"},
                 {"title": "Key Moments", "subtitle": "Powerful presentations"},
-                {"title": "Networking", "subtitle": "Connecting with leaders"},
-                {"title": "Memories Made", "subtitle": "Unforgettable moments"},
+                {"title": "VIP Spotlight", "subtitle": "Industry leaders sharing vision"},
+                {"title": "Panel Discussion", "subtitle": "Deep technical insights shared"},
+                {"title": "Vision 2030", "subtitle": "Shaping the future of metals"},
+                {"title": "Networking", "subtitle": "Connecting with global peers"},
+                {"title": "Ceremony", "subtitle": "Honoring excellence in sector"},
+                {"title": "Memories Made", "subtitle": "Unforgettable moments captured"},
             ]
         )
 
@@ -74,13 +78,11 @@ Swipe to see the highlights →
 
         # Prepare the visual context
         images = []
-        for asset in selected_assets[:4]:  # Take top 4 images for context
+        for asset in selected_assets[:8]:  # Take top 8 images for richer context
             try:
                 img = Image.open(asset["path"])
-                # Convert to RGB to ensure compatibility
                 if img.mode != "RGB":
                     img = img.convert("RGB")
-                # Resize slightly to save bandwidth/tokens while keeping semantics
                 img.thumbnail((1024, 1024))
                 images.append(img)
             except Exception as e:
@@ -90,25 +92,39 @@ Swipe to see the highlights →
         prompt = f"""
         You are an elite experiential marketing professional covering the event: "{event_name}".
         
-        CRITICAL INSTRUCTION: I have attached 4 photos from the event. You MUST write all content based strictly on what is ACTUALLY visible in these photos. 
-        DO NOT hallucinate details. If there is a panel, mention it. If there is a crowd, mention the turnout.
+        CRITICAL INSTRUCTION: I have attached several photos from the event. You MUST write all content based strictly on what is ACTUALLY visible in these photos. 
+        DO NOT hallucinate details. 
 
         Please generate three pieces of content and return them exactly in the following JSON format. Do not include markdown code blocks (```json), just raw JSON:
         {{
             "linkedin": "Your 200-word professional post with 3 bullet points and hashtags.",
             "instagram": "Your 100-word fun, visual, emoji-rich caption with hashtags.",
             "stories": [
-                {{"title": "Short punchy title for frame 1 (max 15 chars)", "subtitle": "A complete sentence describing the excitement of the event opening"}},
-                {{"title": "Title for frame 2", "subtitle": "A sentence focusing on the deep learning and technical insights shared"}},
-                {{"title": "Title for frame 3", "subtitle": "A sentence about the networking energy and community connections"}},
-                {{"title": "Title for frame 4", "subtitle": "A concluding sentence about the lasting impact of the event"}}
+                {{"title": "Frame 1 Title", "subtitle": "Sentence about event opening"}},
+                {{"title": "Frame 2 Title", "subtitle": "Sentence about technical insights"}},
+                {{"title": "Frame 3 Title", "subtitle": "Sentence about keynote energy"}},
+                {{"title": "Frame 4 Title", "subtitle": "Sentence about networking"}},
+                {{"title": "Frame 5 Title", "subtitle": "Sentence about panel discussions"}},
+                {{"title": "Frame 6 Title", "subtitle": "Sentence about crowd engagement"}},
+                {{"title": "Frame 7 Title", "subtitle": "Sentence about ceremony/awards"}},
+                {{"title": "Frame 8 Title", "subtitle": "Sentence about event closing/legacy"}}
             ]
         }}
         """
 
-        content = [prompt] + images
-        response = client.models.generate_content(model="gemini-flash-latest", contents=content)
+        # Use a type-safe list for the Gemini SDK
+        contents: list = [prompt]
+        contents.extend(images)
+        
+        response = client.models.generate_content(
+            model="gemini-flash-latest", 
+            contents=contents
+        )
 
+        if not response.text:
+            print("Gemini returned an empty response, falling back to templates.")
+            return self._generate_with_templates(event_name)
+            
         text_resp = response.text.strip()
         if text_resp.startswith("```json"):
             text_resp = text_resp.replace("```json", "").replace("```", "").strip()
