@@ -38,8 +38,8 @@ class AssetSelector:
             except Exception as e:
                 print(f"Failed to load ML models: {e}")
     
-    def select_assets(self, top_n: int = 10) -> List[Dict]:
-        """Select top N images based on composite AI scores"""
+    def select_assets(self, top_n: int = 20) -> List[Dict]:
+        """Select top N images with a diversity factor for variety"""
         # Support multiple extensions and case sensitivity
         extensions = ["*.jpg", "*.jpeg", "*.png", "*.JPG", "*.JPEG", "*.PNG", "*.webp", "*.WEBP"]
         images = []
@@ -53,10 +53,11 @@ class AssetSelector:
             print(f"No images found in {self.images_dir}")
             return []
         
+        import random
         scored_assets = []
         for img_path in images:
             analysis = self._analyze_image(img_path)
-            if analysis['score'] > 0: # Only keep valid images
+            if analysis['score'] > 0:
                 scored_assets.append({
                     "path": str(img_path),
                     "filename": img_path.name,
@@ -65,9 +66,20 @@ class AssetSelector:
                     "metadata": analysis['metadata']
                 })
         
-        # Sort by score descending
+        # Sort by score descending to get the best quality pool
         scored_assets.sort(key=lambda x: x["score"], reverse=True)
-        return scored_assets[:top_n]
+        
+        # Take the top 30 best images as our "Quality Pool"
+        quality_pool = scored_assets[:30]
+        
+        # Randomly sample top_n from this pool to ensure variety on every run
+        if len(quality_pool) > top_n:
+            final_selection = random.sample(quality_pool, top_n)
+            # Re-sort the final selection by their original quality score
+            final_selection.sort(key=lambda x: x["score"], reverse=True)
+            return final_selection
+        
+        return quality_pool[:top_n]
     
     def _analyze_image(self, img_path: Path) -> Dict:
         """Run full AI analysis on an image"""

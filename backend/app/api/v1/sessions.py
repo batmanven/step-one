@@ -22,6 +22,11 @@ async def list_sessions():
             with open(status_file, 'r') as f:
                 data = json.load(f)
                 session_id = data.get("session_id", status_file.stem.replace("_status", ""))
+                outputs_data = data.get("outputs", {})
+                stories_count = len(outputs_data.get("stories", []))
+                # Count other non-list outputs
+                other_outputs_count = sum(1 for k, v in outputs_data.items() if k != "stories" and v)
+                
                 sessions.append({
                     "_id": session_id,
                     "session_id": session_id,
@@ -29,7 +34,7 @@ async def list_sessions():
                     "progress": data.get("progress", 0),
                     "stage": data.get("stage", "unknown"),
                     "created_at": datetime.fromtimestamp(status_file.stat().st_mtime).isoformat(),
-                    "total_assets": len(data.get("outputs", {})),
+                    "total_assets": stories_count + other_outputs_count,
                     "event_name": data.get("dataset_name", session_id.replace("session_", "event_"))
                 })
         except Exception as e:

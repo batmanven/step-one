@@ -99,7 +99,7 @@ async def run_processing(dataset_name: str, session_id: str, dataset_path: Path)
             os.fsync(f.fileno())
 
         selector = AssetSelector(dataset_path)
-        selected_assets = selector.select_assets()
+        selected_assets = selector.select_assets(top_n=20)
 
         # Stage 2: Copy Generation
         status["stage"] = "copy_generation"
@@ -133,7 +133,8 @@ async def run_processing(dataset_name: str, session_id: str, dataset_path: Path)
 
         story_gen = StoryGenerator()
         stories_json = copies.get("stories_json", None)
-        stories = story_gen.create_stories(selected_assets[:4], session_id, stories_json)
+        # Use up to 8 stories now for more variety
+        stories = story_gen.create_stories(selected_assets[:8], session_id, stories_json)
 
         # Stage 5: Video Reel Generation
         status["stage"] = "video_generation"

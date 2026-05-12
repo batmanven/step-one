@@ -5,7 +5,7 @@ Uses Saliency-Aware cropping (Face Detection) to preserve subjects.
 
 from PIL import Image, ImageDraw, ImageFont
 from pathlib import Path
-from typing import List, Dict
+from typing import List, Dict, Optional
 import cv2
 import numpy as np
 import json
@@ -19,10 +19,10 @@ class StoryGenerator:
         )
 
     def create_stories(
-        self, assets: List[Dict], session_id: str, stories_json: str = None
+        self, assets: List[Dict], session_id: str, stories_json: Optional[str] = None
     ) -> List[Path]:
         """Create 3-4 Instagram Story frames with sequential narrative"""
-        selected = assets[:4]
+        selected = assets[:10]
         stories = []
 
         narratives = []
@@ -37,11 +37,18 @@ class StoryGenerator:
                 print(f"Failed to parse stories_json: {e}")
 
         if not narratives:
+            # Expanded narrative pool for more variety
             narratives = [
                 ("The Event Begins", "Excitement fills the room as attendees arrive"),
                 ("Key Moments", "Engaging sessions and powerful presentations"),
+                ("VIP Spotlight", "Industry leaders sharing their vision for the future"),
+                ("Panel Discussion", "Deep dives into the latest trends and innovations"),
+                ("BME Conclave", "Celebrating excellence in the metal sector"),
+                ("Vision 2030", "A roadmap for a sustainable and innovative future"),
                 ("Networking", "Connecting with industry leaders and peers"),
-                ("Memories Made", "Unforgettable moments captured forever"),
+                ("Global CEO Forum", "Strategy and leadership at the highest level"),
+                ("Ceremony Highlights", "Honoring the achievements of our members"),
+                ("Memories Made", "Unforgettable moments captured forever")
             ]
 
         output_dir = Path("outputs/stories")
@@ -214,8 +221,8 @@ class StoryGenerator:
         return output_path
 
     def _crop_to_portrait(
-        self, img: Image, target_width: int, target_height: int, img_path: str
-    ) -> Image:
+        self, img: Image.Image, target_width: int, target_height: int, img_path: str
+    ) -> Image.Image:
         """Crop image to portrait orientation (9:16) using saliency"""
         img_ratio = img.width / img.height
         target_ratio = target_width / target_height

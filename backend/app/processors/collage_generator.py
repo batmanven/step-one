@@ -88,7 +88,7 @@ class CollageGenerator:
             print(f"Saliency detection failed for {img_path}: {e}")
             return width // 2, height // 2
 
-    def _resize_and_crop(self, img: Image, target_width: int, target_height: int, img_path: str) -> Image:
+    def _resize_and_crop(self, img: Image.Image, target_width: int, target_height: int, img_path: str) -> Image.Image:
         """Resize and crop image using saliency center"""
         img_ratio = img.width / img.height
         target_ratio = target_width / target_height

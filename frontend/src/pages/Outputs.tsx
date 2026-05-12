@@ -185,13 +185,28 @@ export default function Outputs() {
           <p className="text-xs uppercase tracking-widest text-white/40 flex items-center gap-2">
             <Zap className="h-3 w-3" /> Outputs
           </p>
-          <h1 className="text-4xl font-semibold text-white mt-1">Asset Gallery</h1>
+          <div className="flex items-center gap-4">
+            <h1 className="text-4xl font-semibold text-white mt-1">Asset Gallery</h1>
+            {sessionFilter && (
+              <button 
+                onClick={() => {
+                  const url = new URL(window.location.href);
+                  url.searchParams.delete('session');
+                  window.history.pushState({}, '', url);
+                  window.location.reload();
+                }}
+                className="mt-2 px-3 py-1 bg-white/5 hover:bg-white/10 border border-white/10 text-white/60 hover:text-white rounded-full text-[10px] font-bold uppercase tracking-widest transition"
+              >
+                Clear Filter
+              </button>
+            )}
+          </div>
         </div>
 
         <div className="flex items-center gap-4">
           <div className="px-4 py-2 bg-black/40 border border-white/5 rounded-xl">
-            <p className="text-xs text-white/40">Total</p>
-            <p className="text-white font-bold text-lg">{outputs.length}</p>
+            <p className="text-xs text-white/40">Total Assets</p>
+            <p className="text-white font-bold text-lg">{filtered.length}</p>
           </div>
           <button className="h-11 px-6 bg-white text-black rounded-full text-sm font-semibold">
             Export
