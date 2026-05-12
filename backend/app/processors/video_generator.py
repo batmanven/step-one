@@ -7,7 +7,7 @@ import cv2
 import numpy as np
 import ffmpeg
 import os
-from typing import List, Tuple
+from typing import List, Tuple, Optional
 import shutil
 
 class VideoGenerator:
@@ -15,13 +15,25 @@ class VideoGenerator:
         self.videos_dir = dataset_path / "videos"
         self.temp_dir = Path("outputs/temp_videos")
         
-    def create_highlight_reel(self, session_id: str, target_duration: int = 30) -> Path:
+        # Check if ffmpeg is available
+        import shutil
+        if not shutil.which("ffmpeg"):
+            print("WARNING: ffmpeg binary not found in system path. Video generation will fail.")
+            
+    def create_highlight_reel(self, session_id: str, target_duration: int = 30) -> Optional[Path]:
         """Create a highlight reel of target duration (seconds)"""
         if not self.videos_dir.exists():
             print("No videos directory found.")
             return None
             
-        video_files = list(self.videos_dir.glob("*.mp4")) + list(self.videos_dir.glob("*.mov"))
+        # Support multiple extensions and case sensitivity
+        extensions = ["*.mp4", "*.mov", "*.MP4", "*.MOV", "*.avi", "*.AVI", "*.mkv", "*.MKV"]
+        video_files = []
+        for ext in extensions:
+            video_files.extend(list(self.videos_dir.glob(ext)))
+        
+        # Remove duplicates
+        video_files = list(set(video_files))
         if not video_files:
             print("No video files found in dataset.")
             return None

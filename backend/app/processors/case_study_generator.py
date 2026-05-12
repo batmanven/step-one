@@ -106,7 +106,7 @@ class CaseStudyGenerator:
         TONE: Clear, simple, human, and professional. Avoid jargon.
         """
 
-        response = client.models.generate_content(model="gemini-1.5-pro", contents=prompt)
+        response = client.models.generate_content(model="gemini-flash-latest", contents=prompt)
         return response.text
 
     def _fallback_template(self, event_name, assets, copies):

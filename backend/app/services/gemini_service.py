@@ -60,7 +60,7 @@ class GeminiService:
             - Include a call-to-action for engagement
             """
 
-            response = self.client.models.generate_content(model="gemini-1.5-pro", contents=prompt)
+            response = self.client.models.generate_content(model="gemini-flash-latest", contents=prompt)
             return response.text
 
         except Exception as e:

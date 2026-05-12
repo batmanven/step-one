@@ -11,7 +11,7 @@ from typing import List, Dict
 
 try:
     from ultralytics import YOLO
-    from fer import FER
+    from fer.fer import FER
     ML_AVAILABLE = True
 except ImportError:
     ML_AVAILABLE = False
@@ -23,12 +23,15 @@ class AssetSelector:
         self.images_dir = dataset_path / "images"
         self.videos_dir = dataset_path / "videos"
         
+        # Ensure directories exist
+        self.images_dir.mkdir(parents=True, exist_ok=True)
+        self.videos_dir.mkdir(parents=True, exist_ok=True)
+        
         self.yolo_model = None
         self.fer_detector = None
         
         if ML_AVAILABLE:
             try:
-                # Load YOLOv8 nano for fast inference
                 self.yolo_model = YOLO('yolov8n.pt')
                 # Load FER for emotion detection
                 self.fer_detector = FER(mtcnn=True)
@@ -37,7 +40,18 @@ class AssetSelector:
     
     def select_assets(self, top_n: int = 10) -> List[Dict]:
         """Select top N images based on composite AI scores"""
-        images = list(self.images_dir.glob("*.jpg")) + list(self.images_dir.glob("*.png"))
+        # Support multiple extensions and case sensitivity
+        extensions = ["*.jpg", "*.jpeg", "*.png", "*.JPG", "*.JPEG", "*.PNG", "*.webp", "*.WEBP"]
+        images = []
+        for ext in extensions:
+            images.extend(list(self.images_dir.glob(ext)))
+        
+        # Remove duplicates
+        images = list(set(images))
+        
+        if not images:
+            print(f"No images found in {self.images_dir}")
+            return []
         
         scored_assets = []
         for img_path in images:
