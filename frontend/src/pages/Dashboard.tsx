@@ -12,7 +12,9 @@ import {
   XCircle,
   Clock,
   Layers,
-  ArrowUpRight
+  ArrowUpRight,
+  Upload,
+  FileArchive
 } from 'lucide-react';
 import { healthApi, sessionsApi, apiRequest } from '../lib/api';
 
@@ -23,6 +25,9 @@ export default function Dashboard() {
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<any>(null);
   const [error, setError] = useState<string | null>(null);
+  const [uploadFile, setUploadFile] = useState<File | null>(null);
+  const [uploading, setUploading] = useState(false);
+  const [uploadSuccess, setUploadSuccess] = useState<string | null>(null);
 
   const [statsData, setStatsData] = useState({
     activeSessions: '0',
@@ -88,6 +93,38 @@ export default function Dashboard() {
       setError(err.message || 'Failed to process dataset');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleUpload = async () => {
+    if (!uploadFile || !datasetName) {
+      setError('Please enter a dataset name and select a ZIP file');
+      return;
+    }
+
+    setUploading(true);
+    setError(null);
+    setUploadSuccess(null);
+
+    const formData = new FormData();
+    formData.append('file', uploadFile);
+    formData.append('event_name', datasetName);
+
+    try {
+      const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/v1/upload/bulk-zip?event_name=${encodeURIComponent(datasetName)}`, {
+        method: 'POST',
+        body: formData,
+      });
+
+      if (!response.ok) throw new Error('Upload failed');
+
+      const data = await response.json();
+      setUploadSuccess(`Dataset "${data.dataset_name}" successfully created and organized!`);
+      setUploadFile(null);
+    } catch (err: any) {
+      setError(err.message || 'Failed to upload dataset');
+    } finally {
+      setUploading(false);
     }
   };
 
@@ -226,36 +263,108 @@ export default function Dashboard() {
               </AnimatePresence>
             </div>
           </div>
-        </div>
 
-        {/* Quick Access Sidebar */}
-        <div className="flex flex-col gap-4">
-          {[
-            { title: 'Processing Queue', desc: 'Monitor active sessions', icon: FolderOpen, path: '/sessions' },
-            { title: 'Asset Repository', desc: 'Browse generated media', icon: ImageIcon, path: '/outputs' },
-            { title: 'Technical Docs', desc: 'API and system architecture', icon: BookOpen, path: '/docs' },
-          ].map((action, i) => (
-            <motion.div
-              key={i}
-              initial={{ opacity: 0, x: 20 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ delay: 0.3 + (i * 0.1) }}
-              onClick={() => navigate(action.path)}
-              className="shopify-card p-6 flex items-center justify-between group cursor-pointer hover:bg-white/5 active:scale-[0.98]"
-            >
-              <div className="flex items-center gap-5">
-                <div className="p-3 rounded-xl bg-dark-forest text-shade-50 group-hover:text-white transition-colors">
-                  <action.icon className="h-5 w-5" />
+          {/* Bulk Upload Section */}
+          <div className="mt-6 bg-void/50 border border-dashed border-white/10 rounded-xl p-8">
+            <div className="flex flex-col md:flex-row items-center gap-8">
+              <div className="flex-1 space-y-4">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 rounded-lg bg-purple-600/10 text-purple-500">
+                    <FileArchive className="h-5 w-5" />
+                  </div>
+                  <div>
+                    <h3 className="text-lg font-light text-white">Bulk Dataset Upload (.zip)</h3>
+                    <p className="text-xs text-shade-50">Upload a ZIP of 50-150 images/videos</p>
+                  </div>
                 </div>
-                <div>
-                  <h3 className="text-base font-medium text-white">{action.title}</h3>
-                  <p className="text-[11px] text-shade-50 font-medium">{action.desc}</p>
+
+                <div className="relative group">
+                  <input
+                    type="file"
+                    accept=".zip"
+                    onChange={(e) => setUploadFile(e.target.files?.[0] || null)}
+                    className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
+                  />
+                  <div className={`h-24 border-2 border-dashed rounded-lg flex flex-col items-center justify-center gap-2 transition-all ${uploadFile ? 'border-purple-500/50 bg-purple-500/5' : 'border-white/5 hover:border-white/10 bg-white/2'}`}>
+                    {uploadFile ? (
+                      <>
+                        <div className="flex items-center gap-2 text-purple-400">
+                          <CheckCircle2 className="h-4 w-4" />
+                          <span className="text-sm font-medium">{uploadFile.name}</span>
+                        </div>
+                        <span className="text-[10px] text-shade-70">Ready to ingest</span>
+                      </>
+                    ) : (
+                      <>
+                        <Upload className="h-6 w-6 text-shade-70 group-hover:text-shade-50" />
+                        <span className="text-xs text-shade-50">Click or drag ZIP file here</span>
+                      </>
+                    )}
+                  </div>
                 </div>
               </div>
-              <ArrowUpRight className="h-4 w-4 text-shade-70 group-hover:text-white group-hover:translate-x-1 group-hover:-translate-y-1 transition-all" />
-            </motion.div>
-          ))}
+
+              <div className="flex flex-col gap-3 min-w-[180px]">
+                <button
+                  onClick={handleUpload}
+                  disabled={uploading || !uploadFile || !datasetName}
+                  className="btn-pill h-12 bg-purple-600 hover:bg-purple-500 text-white flex items-center justify-center gap-3 shadow-lg shadow-purple-900/40 disabled:opacity-50 disabled:cursor-not-allowed group"
+                >
+                  {uploading ? (
+                    <>
+                      <Activity className="h-4 w-4 animate-spin" />
+                      Ingesting...
+                    </>
+                  ) : (
+                    <>
+                      <Upload className="h-4 w-4" />
+                      <span className="text-xs font-bold uppercase tracking-widest">Upload Zip</span>
+                    </>
+                  )}
+                </button>
+                <p className="text-[10px] text-center text-shade-70 leading-tight">
+                  Videos and images will be <br />auto-organized by AI.
+                </p>
+              </div>
+            </div>
+
+            {uploadSuccess && (
+              <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="mt-6 p-4 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs flex items-center gap-3">
+                <CheckCircle2 className="h-4 w-4 shrink-0" />
+                <span>{uploadSuccess}</span>
+              </motion.div>
+            )}
+          </div>
         </div>
+      </div>
+
+      {/* Quick Access Sidebar */}
+      <div className="flex flex-col gap-4">
+        {[
+          { title: 'Processing Queue', desc: 'Monitor active sessions', icon: FolderOpen, path: '/sessions' },
+          { title: 'Asset Repository', desc: 'Browse generated media', icon: ImageIcon, path: '/outputs' },
+          { title: 'Technical Docs', desc: 'API and system architecture', icon: BookOpen, path: '/docs' },
+        ].map((action, i) => (
+          <motion.div
+            key={i}
+            initial={{ opacity: 0, x: 20 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ delay: 0.3 + (i * 0.1) }}
+            onClick={() => navigate(action.path)}
+            className="shopify-card p-6 flex items-center justify-between group cursor-pointer hover:bg-white/5 active:scale-[0.98]"
+          >
+            <div className="flex items-center gap-5">
+              <div className="p-3 rounded-xl bg-dark-forest text-shade-50 group-hover:text-white transition-colors">
+                <action.icon className="h-5 w-5" />
+              </div>
+              <div>
+                <h3 className="text-base font-medium text-white">{action.title}</h3>
+                <p className="text-[11px] text-shade-50 font-medium">{action.desc}</p>
+              </div>
+            </div>
+            <ArrowUpRight className="h-4 w-4 text-shade-70 group-hover:text-white group-hover:translate-x-1 group-hover:-translate-y-1 transition-all" />
+          </motion.div>
+        ))}
       </div>
     </div>
   );
